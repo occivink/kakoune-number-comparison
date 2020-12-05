@@ -55,8 +55,24 @@ define-command check-matches -params 3 %{
         not="$1"
         op="$2"
         val="$3"
+        # need to remove leading 0 because of stupid octal rules...
+        # shouldn't impact operations though
+        case "$val" in
+            0|-0|00|-00|000000|-000000) val=0 ;;
+            00000*) val="${val#00000}" ;;
+            0*) val="${val#0}" ;;
+            -00000*) val="-${val#-00000}" ;;
+            -0*) val="-${val#-0}" ;;
+        esac
         eval set -- "$kak_selections"
-        for number; do
+for number; do
+            case "$number" in
+                0|-0|00|-00|000000|-000000) number=0 ;;
+                00000*) number="${number#00000}" ;;
+                0*) number="${number#0}" ;;
+                -00000*) number="-${number#-00000}" ;;
+                -0*) number="-${number#-0}" ;;
+            esac
             if [ $not "$number" "$op" "$val" ]; then
                 :
             else
