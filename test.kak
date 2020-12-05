@@ -27,7 +27,7 @@ define-command start-test -params 1 %{
 
     try %{
         buffer *debug*
-        #quit! 0
+        quit! 0
     }
 }
 
