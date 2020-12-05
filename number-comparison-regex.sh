@@ -1,5 +1,33 @@
 #!/bin/sh
 
+is_operator()
+{
+    case "$1" in
+      "<") ;;
+      "<=") ;;
+      ">") ;;
+      ">=") ;;
+      "=") ;;
+      "==") ;;
+      "!=") ;;
+      *) return 1 ;;
+    esac
+}
+
+is_number()
+{
+    num="$1"
+    case "$num" in
+      "+"*) num=${num#+} ;;
+      "-"*) num=${num#-} ;;
+      *) ;;
+    esac
+    case "$num" in
+       *[!0-9]*|'') return 1 ;;
+       *) ;;
+    esac
+}
+
 print_range()
 {
     if [ $1 = $2 ]; then
@@ -122,22 +150,8 @@ lt()
 
 compare()
 {
-    if [ $# -ne 2 ]; then
-        echo Invalid arguments
-        return 1
-    fi
-
     op="$1"
-    case "$op" in
-      "<") ;;
-      "<=") ;;
-      ">") ;;
-      ">=") ;;
-      "=") ;;
-      "==") op="=";;
-      "!=") ;;
-      *) echo Invalid operator ; return 1 ;;
-    esac
+    [ "$op" = '==' ] && op='='
 
     tmp="$2"
     sign=''
@@ -146,21 +160,17 @@ compare()
       "-"*) tmp=${tmp#-} ; sign='-' ;;
       *) sign="+" ;;
     esac
-    case "$tmp" in
-       *[!0-9]*|'') echo not a number ; return 1 ;;
-       *) ;;
-    esac
 
     while :; do
         num=${tmp#0}
         [ "$tmp" = "$num" ] && break
         tmp=$num
     done
-    if [ "$num" = "" ]; then
+    if [ "$num" = '' ]; then
         num='0';
-    fi
-    if [ "$num" = '0' ] && [ "$sign" = "-" ]; then
-        sign='+'
+        if [ "$sign" = "-" ]; then
+            sign='+'
+        fi
     fi
 
     if [ "$op" = '>' ] || [ "$op" = '>=' ]; then
@@ -221,7 +231,19 @@ compare()
 if [ -n "${KAK_NUMBER_COMPARISON_NOAUTOCOMPARE+a}" ]; then
     :
 else
-    compare "$@"
+    if [ $# -ne 2 ]; then
+        echo Missing arguments
+        exit 1
+    fi
+    if ! is_operator "$1"; then
+        echo "$1" is not a valid operator
+        exit 1
+    fi
+    if ! is_number "$2"; then
+        echo "$2" is not a valid number
+        exit 1
+    fi
+    compare "$1" "$2"
     if [ $? -eq 0 ]; then
         printf '\n'
     else
