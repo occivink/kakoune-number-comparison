@@ -124,7 +124,7 @@ compare()
 {
     if [ $# -ne 2 ]; then
         echo Invalid arguments
-        exit 1
+        return 1
     fi
 
     op="$1"
@@ -136,7 +136,7 @@ compare()
       "=") ;;
       "==") op="=";;
       "!=") ;;
-      *) echo Invalid operator ; exit 1 ;;
+      *) echo Invalid operator ; return 1 ;;
     esac
 
     tmp="$2"
@@ -147,7 +147,7 @@ compare()
       *) sign="+" ;;
     esac
     case "$tmp" in
-       *[!0-9]*|'') echo not a number ; exit 1 ;;
+       *[!0-9]*|'') echo not a number ; return 1 ;;
        *) ;;
     esac
 
@@ -222,5 +222,9 @@ if [ -n "${KAK_NUMBER_COMPARISON_NOAUTOCOMPARE+a}" ]; then
     :
 else
     compare "$@"
-    printf '\n'
+    if [ $? -eq 0 ]; then
+        printf '\n'
+    else
+        exit 1
+    fi
 fi
