@@ -127,13 +127,13 @@ compare()
 
     op="$1"
     case "$op" in
-      "<"*) ;;
-      "<="*) ;;
-      ">"*) ;;
-      ">="*) ;;
-      "="*) ;;
-      "=="*) op="=";;
-      "!="*) ;;
+      "<") ;;
+      "<=") ;;
+      ">") ;;
+      ">=") ;;
+      "=") ;;
+      "==") op="=";;
+      "!=") ;;
       *) echo Invalid operator ; exit 1 ;;
     esac
 
@@ -163,7 +163,9 @@ compare()
 
     if [ "$op" = '>' ] || [ "$op" = '>=' ]; then
         [ "$op" = '>' ] && strict='y' || strict='n'
-        if [ "$sign" = '+' ]; then
+        if [ "$op" = ">=" ] && [ "$num" = '0' ]; then
+            printf -- '(-0+|\d+)'
+        elif [ "$sign" = '+' ]; then
             gt "$num" "$strict"
         else
             printf -- '(-'
@@ -184,7 +186,9 @@ compare()
             gt "$num" "$strict"
         fi
     elif [ "$op" = "=" ]; then
-        if [ "$sign" = '+' ]; then
+        if [ "$num" = 0 ]; then
+            printf -- '-?0+'
+        elif [ "$sign" = '+' ]; then
             printf -- '0*%s' "$num"
         else
             printf -- '-0*%s' "$num"
