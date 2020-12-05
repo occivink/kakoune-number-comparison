@@ -1,33 +1,33 @@
 source number-comparison.kak
 
-define-command start-test %{
+define-command start-test -params 1 %{
     edit -scratch *test-buffer*
-    reg | %{
-        for i in $(seq 100 -1 0); do
-            echo '-%s' "$i"
-            echo '-0%s' "$i"
-            echo '-00000%s' "$i"
+    reg | "
+        for i in $(seq %arg{1} -1 0); do
+            printf -- '-%%s\n' $i
+            printf -- '-0%%s\n' $i
+            printf -- '-00000%%s\n' $i
         done
-        for i in $(seq 0 1 100); do
-            echo '%s' "$i"
-            echo '0%s' "$i"
-            echo '00000%s' "$i"
+        for i in $(seq 0 1 %arg{1}); do
+            printf -- '%%s\n' $i
+            printf -- '0%%s\n' $i
+            printf -- '00000%%s\n' $i
         done
-    }
+    "
     exec '|<ret>'
     exec '%<a-s>H'
     eval -itersel %{
-        compare-number-to-rest < "lt" "%val{selection}"
-        compare-number-to-rest <= "le" "%val{selection}"
-        compare-number-to-rest > "gt" "%val{selection}"
-        compare-number-to-rest >= "ge" "%val{selection}"
-        compare-number-to-rest = "eq" "%val{selection}"
+        compare-number-to-rest < "-lt" "%val{selection}"
+        compare-number-to-rest <= "-le" "%val{selection}"
+        compare-number-to-rest > "-gt" "%val{selection}"
+        compare-number-to-rest >= "-ge" "%val{selection}"
+        compare-number-to-rest = "-eq" "%val{selection}"
+        compare-number-to-rest != "-ne" "%val{selection}"
     }
 
     try %{
         buffer *debug*
-
-        quit! 0
+        #quit! 0
     }
 }
 
@@ -60,7 +60,7 @@ define-command check-matches -params 3 %{
             if [ $not "$number" "$op" "$val" ]; then
                 :
             else
-                printf 'echo -debug "comparison failed %s %s %s"\n' "$number" "$op" "$val";
+                printf 'echo -debug "comparison failed %s %s %s %s"\n' "$not" "$number" "$op" "$val";
             fi
         done
     }
