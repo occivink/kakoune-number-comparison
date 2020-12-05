@@ -203,7 +203,7 @@ compare()
         else
             printf '(-'
             gt "$num" "$strict"
-            printf -- '|'
+            printf -- '|-'
             lt "$num" "$strict"
             printf -- '|\d+)'
         fi
