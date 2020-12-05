@@ -211,7 +211,12 @@ compare()
     fi
 }
 
-compare "$@"
+# silly mechanism to disable the auto-comparison when sourcing the script
+if [ -n "${KAK_NUMBER_COMPARISON_NOAUTOCOMPARE+a}" ]; then
+    :
+else
+    compare "$@"
+fi
 
 #     gt               | lt
 # +   gt N             | lt N || negative
