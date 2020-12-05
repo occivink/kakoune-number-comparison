@@ -222,6 +222,7 @@ if [ -n "${KAK_NUMBER_COMPARISON_NOAUTOCOMPARE+a}" ]; then
     :
 else
     compare "$@"
+    printf '\n'
 fi
 
 #     gt               | lt

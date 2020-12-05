@@ -5,7 +5,7 @@ number-comparison OP NUM
 " %{
    set-register slash %sh{
        export KAK_NUMBER_COMPARISON_NOAUTOCOMPARE=
-       . "$kak_opt_number_comparison_install_path"/regex.sh
+       . "$kak_opt_number_comparison_install_path"/number-comparison-regex.sh
        printf '(?<![0-9-])'
        compare "$1" "$2"
        printf '(?![0-9-])'
