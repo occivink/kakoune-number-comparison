@@ -37,13 +37,13 @@ define-command compare-number-to-rest -params 3 %{
         exec '%<a-s>H'
         try %{
             eval -draft %{
-                exec '<a-k>ret'
+                exec '<a-k><ret>'
                 check-matches '' "%arg{2}" "%arg{3}"
             }
         }
         try %{
             eval -draft %{
-                exec '<a-K>ret'
+                exec '<a-K><ret>'
                 check-matches '!' "%arg{2}" "%arg{3}"
             }
         }
