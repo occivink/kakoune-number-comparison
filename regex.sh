@@ -77,7 +77,8 @@ lt()
             print_range 0 "$num"
         else
             if [ "$num" = '0' ]; then
-                printf '\A\z'
+                # should not reach here
+                exit 1
             else
                 printf '0*'
                 print_range 0 "$((num - 1))"
@@ -133,10 +134,11 @@ case "$op" in
 esac
 
 tmp="$2"
+sign=''
 case "$tmp" in
-  "+"*) tmp=${tmp#+} ; positive=y ;;
-  "-"*) tmp=${tmp#-} ; positive=n ;;
-  *) positive=y ;;
+  "+"*) tmp=${tmp#+} ; sign='+' ;;
+  "-"*) tmp=${tmp#-} ; sign='-' ;;
+  *) sign="+" ;;
 esac
 case "$tmp" in
    *[!0-9]*|'') echo not a number ; exit 1 ;;
@@ -149,19 +151,40 @@ while :; do
     tmp=$num
 done
 if [ "$num" = "" ]; then
-    num=0;
+    num='0';
+fi
+if [ "$num" = '0' ] && [ "$sign" = "-" ]; then
+    sign='+'
 fi
 
-if [ "$op" = ">" ]; then
-    gt "$num" y
-elif [ "$op" = ">=" ]; then
-    gt "$num" n
-elif [ "$op" = "<" ]; then
-    lt "$num" y
-elif [ "$op" = "<=" ]; then
-    lt "$num" n
+if [ "$op" = '>' ] || [ "$op" = '>=' ]; then
+    [ "$op" = '>' ] && strict='y' || strict='n'
+    if [ "$sign" = '+' ]; then
+        gt "$num" "$strict"
+    else
+        printf -- '(-'
+        lt "$num" "$strict"
+        printf -- '|\d+)'
+    fi
+elif [ "$op" = "<" ] || [ "$op" = "<=" ]; then
+    [ "$op" = '<' ] && strict='y' || strict='n'
+    # special case for <0
+    if [ "$op" = '<' ] && [ "$num" = '0' ]; then
+        printf -- '-0*[1-9]\d*'
+    elif [ "$sign" = '+' ]; then
+        printf -- '('
+        lt "$num" "$strict"
+        printf -- '|-\d+)'
+    else
+        printf -- '-'
+        gt "$num" "$strict"
+    fi
 elif [ "$op" = "=" ]; then
-    printf '0*%s' "$num"
+    if [ "$sign" = '+' ]; then
+        printf -- '0*%s' "$num"
+    else
+        printf -- '-0*%s' "$num"
+    fi
 fi
 
 #     gt               | lt
