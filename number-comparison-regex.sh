@@ -224,7 +224,3 @@ else
     compare "$@"
     printf '\n'
 fi
-
-#     gt               | lt
-# +   gt N             | lt N || negative
-# -   positive || gt N | lt N
