@@ -118,74 +118,100 @@ lt()
     fi
 }
 
-if [ $# -ne 2 ]; then
-    echo Invalid arguments
-    exit 1
-fi
-
-op="$1"
-case "$op" in
-  "<"*) ;;
-  "<="*) ;;
-  ">"*) ;;
-  ">="*) ;;
-  "="*) ;;
-  *) echo Invalid operator ; exit 1 ;;
-esac
-
-tmp="$2"
-sign=''
-case "$tmp" in
-  "+"*) tmp=${tmp#+} ; sign='+' ;;
-  "-"*) tmp=${tmp#-} ; sign='-' ;;
-  *) sign="+" ;;
-esac
-case "$tmp" in
-   *[!0-9]*|'') echo not a number ; exit 1 ;;
-   *) ;;
-esac
-
-while :; do
-    num=${tmp#0}
-    [ "$tmp" = "$num" ] && break
-    tmp=$num
-done
-if [ "$num" = "" ]; then
-    num='0';
-fi
-if [ "$num" = '0' ] && [ "$sign" = "-" ]; then
-    sign='+'
-fi
-
-if [ "$op" = '>' ] || [ "$op" = '>=' ]; then
-    [ "$op" = '>' ] && strict='y' || strict='n'
-    if [ "$sign" = '+' ]; then
-        gt "$num" "$strict"
-    else
-        printf -- '(-'
-        lt "$num" "$strict"
-        printf -- '|\d+)'
+compare()
+{
+    if [ $# -ne 2 ]; then
+        echo Invalid arguments
+        exit 1
     fi
-elif [ "$op" = "<" ] || [ "$op" = "<=" ]; then
-    [ "$op" = '<' ] && strict='y' || strict='n'
-    # special case for <0
-    if [ "$op" = '<' ] && [ "$num" = '0' ]; then
-        printf -- '-0*[1-9]\d*'
-    elif [ "$sign" = '+' ]; then
-        printf -- '('
-        lt "$num" "$strict"
-        printf -- '|-\d+)'
-    else
-        printf -- '-'
-        gt "$num" "$strict"
+
+    op="$1"
+    case "$op" in
+      "<"*) ;;
+      "<="*) ;;
+      ">"*) ;;
+      ">="*) ;;
+      "="*) ;;
+      "=="*) op="=";;
+      "!="*) ;;
+      *) echo Invalid operator ; exit 1 ;;
+    esac
+
+    tmp="$2"
+    sign=''
+    case "$tmp" in
+      "+"*) tmp=${tmp#+} ; sign='+' ;;
+      "-"*) tmp=${tmp#-} ; sign='-' ;;
+      *) sign="+" ;;
+    esac
+    case "$tmp" in
+       *[!0-9]*|'') echo not a number ; exit 1 ;;
+       *) ;;
+    esac
+
+    while :; do
+        num=${tmp#0}
+        [ "$tmp" = "$num" ] && break
+        tmp=$num
+    done
+    if [ "$num" = "" ]; then
+        num='0';
     fi
-elif [ "$op" = "=" ]; then
-    if [ "$sign" = '+' ]; then
-        printf -- '0*%s' "$num"
-    else
-        printf -- '-0*%s' "$num"
+    if [ "$num" = '0' ] && [ "$sign" = "-" ]; then
+        sign='+'
     fi
-fi
+
+    if [ "$op" = '>' ] || [ "$op" = '>=' ]; then
+        [ "$op" = '>' ] && strict='y' || strict='n'
+        if [ "$sign" = '+' ]; then
+            gt "$num" "$strict"
+        else
+            printf -- '(-'
+            lt "$num" "$strict"
+            printf -- '|\d+)'
+        fi
+    elif [ "$op" = "<" ] || [ "$op" = "<=" ]; then
+        [ "$op" = '<' ] && strict='y' || strict='n'
+        # special case for <0
+        if [ "$op" = '<' ] && [ "$num" = '0' ]; then
+            printf -- '-0*[1-9]\d*'
+        elif [ "$sign" = '+' ]; then
+            printf -- '('
+            lt "$num" "$strict"
+            printf -- '|-\d+)'
+        else
+            printf -- '-'
+            gt "$num" "$strict"
+        fi
+    elif [ "$op" = "=" ]; then
+        if [ "$sign" = '+' ]; then
+            printf -- '0*%s' "$num"
+        else
+            printf -- '-0*%s' "$num"
+        fi
+    elif [ "$op" = "!=" ]; then
+        strict='y'
+        # special case for 0... again
+        if [ $num = '0' ]; then
+            printf -- '-?\d*[1-9]\d*'
+        elif [ "$sign" = '+' ]; then
+            printf '('
+            gt "$num" "$strict"
+            printf -- '|'
+            lt "$num" "$strict"
+            printf -- '|-\d+)'
+        else
+            printf '(-'
+            gt "$num" "$strict"
+            printf -- '|'
+            lt "$num" "$strict"
+            printf -- '|\d+)'
+        fi
+
+    fi
+}
+
+compare "$@"
 
 #     gt               | lt
 # +   gt N             | lt N || negative
