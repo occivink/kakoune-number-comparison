@@ -4,6 +4,8 @@ print_range()
 {
     if [ $1 = $2 ]; then
         printf '%s' "$1"
+    elif [ $1 = 0 ] && [ $2 = 9 ]; then
+        printf '\d'
     else
         printf "[%s-%s]" "$1" "$2"
     fi
