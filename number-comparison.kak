@@ -1,24 +1,63 @@
 declare-option -hidden str number_comparison_install_path %sh{dirname "$kak_source"}
 
-define-command number-comparison -params 2.. -docstring "
-number-comparison OP NUM
+define-command number-comparison -params .. -docstring "
+number-comparison [-register REG] [-no-bounds-check] OP NUM
 " %{
     eval %sh{
         export KAK_NUMBER_COMPARISON_NOAUTOCOMPARE=
         . "$kak_opt_number_comparison_install_path"/number-comparison-regex.sh
-        if ! is_operator "$1"; then
-            echo 'fail "%arg{1}" is not a valid operator'
+
+        arg_num=0
+        register='/'
+        op=''
+        number=''
+        boundaries='y'
+        while [ $# -ne 0 ]; do
+            arg=$1
+            shift
+            arg_num=$((arg_num + 1))
+            if [ "$arg" = '-register' ]; then
+                if [ $# -eq 0 ]; then
+                    echo 'fail "Missing argument to -register"'
+                    exit 1
+                fi
+                # the set-register will later check that it's a valid one
+                register=$1
+                shift
+                arg_num=$((arg_num + 1))
+            elif [ "$arg" = '-no-bounds-check' ]; then
+                boundaries='n'
+            elif [ -z "$op" ]; then
+                if ! is_operator "$arg"; then
+                    printf "fail \"Invalid operator '%%arg{%s}'\"" "$arg_num"
+                    exit 1
+                fi
+                op=$arg
+            elif [ -z "$number" ]; then
+                if ! is_number "$arg"; then
+                    printf "fail \"Invalid number '%%arg{%s}'\"" "$arg_num"
+                    exit 1
+                fi
+                number="$arg"
+            else
+                printf "fail \"Unrecognized extra argument '%%arg{%s}'\"" "$arg_num"
+                exit 1
+            fi
+        done
+        if [ -z "$op" ]; then
+            echo 'fail "Missing operator"'
             exit 1
         fi
-        if ! is_number "$2"; then
-            echo 'fail "%arg{2}" is not a valid number'
+        if [ -z "$number" ]; then
+            echo 'fail "Missing number"'
             exit 1
         fi
         # the generated regex shouldn't contain any ' ... I think
-        printf "set-register slash '"
-        printf '(?<![0-9-])'
-        compare "$1" "$2"
-        printf '(?![0-9-])'
-        printf "'"
+        printf "set-register %s '" "$register"
+        [ "$boundaries" = y ] && printf '(?<![0-9-])'
+        compare "$op" "$number"
+        [ "$boundaries" = y ] && printf '(?![0-9-])'
+        printf "'\n"
+        printf "echo -markup \"{Information}{\}register '%s' set to '%%reg{%s}'\"\n" "$register" "$register"
     }
 }
