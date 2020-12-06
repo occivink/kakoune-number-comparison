@@ -228,7 +228,7 @@ compare()
 }
 
 # silly mechanism to disable the auto-comparison when sourcing the script
-if [ -n "${KAK_NUMBER_COMPARISON_NOAUTOCOMPARE+a}" ]; then
+if [ -n "${NOAUTOCOMPARE+a}" ]; then
     :
 else
     if [ $# -ne 2 ]; then
