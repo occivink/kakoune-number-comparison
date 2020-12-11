@@ -17,7 +17,7 @@ number-comparison [-no-bounds-check] [-register REGISTER] OPERATOR NUMBER
 
 The command sets the `/` (search) register to a regular expression that will match any integer such that `MATCH OPERATOR NUMBER` is fulfilled. For example, after calling `number-comparison < 3`, numbers smaller than `3` (such as `1`, `0`, `-011`)  will be matched.
 
-By default, the regex will be surrounded by the lookarounds `(?<![0-9-])` and `(?![0-9]-)`, to avoid partial number matches. This can be disabled with the `-no-bounds-check` flags.
+By default, the regex will be surrounded by the lookarounds `(?<![0-9-])` and `(?![0-9-])`, to avoid partial number matches. This can be disabled with the `-no-bounds-check` flags.
 
 A register other than `/` may be specified with `-register`.
 
