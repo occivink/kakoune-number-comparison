@@ -27,6 +27,7 @@ define-command start-test -params 1 %{
 
     try %{
         buffer *debug*
+        exec '%<a-K>comparison failed<ret>'
         quit! 0
     }
 }
