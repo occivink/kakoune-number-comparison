@@ -230,12 +230,15 @@ compare()
             gt
         fi
     elif [ "$op" = "=" ]; then
-        if [ "$int" = 0 ]; then
-            printf -- '-?0+'
-        elif [ "$sign" = '+' ]; then
-            printf -- '0*%s' "$int"
+        [ "$sign" = '-' ] && prefix='-' || prefix=''
+        if [ "$int" = 0 ] && [ "$dec" = 0 ]; then
+            printf -- '-?(0+(\.0*)?|\.0+)'
+        elif [ $int = 0 ]; then
+            printf -- '%s0*\.%s0*' "$prefix" "$dec"
+        elif [ $dec = 0 ]; then
+            printf -- '%s0*%s(\.0*)?' "$prefix" "$int"
         else
-            printf -- '-0*%s' "$int"
+            printf -- '%s0*%s\.%s0*' "$prefix" "$int" "$dec"
         fi
     elif [ "$op" = "!=" ]; then
         # special case for 0... again
