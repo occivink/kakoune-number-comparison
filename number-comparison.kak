@@ -28,13 +28,13 @@ number-comparison [-register REG] [-no-bounds-check] OP NUM
             elif [ "$arg" = '-no-bounds-check' ]; then
                 boundaries='n'
             elif [ -z "$op" ]; then
-                if ! is_operator "$arg"; then
+                if ! parse_operator "$arg"; then
                     printf "fail \"Invalid operator '%%arg{%s}'\"" "$arg_num"
                     exit 1
                 fi
                 op=$arg
             elif [ -z "$number" ]; then
-                if ! is_number "$arg"; then
+                if ! parse_number "$arg"; then
                     printf "fail \"Invalid number '%%arg{%s}'\"" "$arg_num"
                     exit 1
                 fi
