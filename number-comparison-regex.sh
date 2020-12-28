@@ -134,7 +134,7 @@ any_number()
 
 any_positive_number()
 {
-    printf -- '0*[1-9]\d*(\.\d*)?|\.0*[1-9]\d*'
+    printf -- '0*[1-9]\d*(\.\d*)?|0*\.0*[1-9]\d*'
 }
 
 gt()
@@ -165,10 +165,12 @@ gt()
         digitsbefore="${digitsbefore}${digit}"
     done
     # accept any decimal part
-    printf ')(\.\d+)?'
+    printf ')(\.\d*)?'
 
     # then, numbers that have the same integral part, but a bigger decimal part
-    printf '|%s\.(' "$int"
+    printf '|%s' "$int"
+    [ $int = 0 ] && printf '?'
+    printf '\.('
     printf '%s\d*[1-9]' "$dec"
 
     digitsbefore=''
@@ -211,7 +213,6 @@ lt()
                 # numbers that have fewer digits (duh)
                 printf '\d'
                 print_repeat '1' "$((${#int} - 1))"
-                printf '|'
                 # same number of digits, but that are smaller
                 digitsbefore=''
                 digitsafter=''
@@ -238,17 +239,27 @@ lt()
                 done
                 printf ')'
             fi
+        else
+            printf '0'
         fi
         # accept any decimal part
-        printf '(\.\d+)?'
+        printf '(\.\d*)?'
+        # as well as no integral part (= 0)
+        printf '|\.\d+'
     fi
 
     if [ "$dec" != "" ]; then
         [ "$had_int" = y ] && printf '|'
 
         # then, numbers that have the same integral part, but a smaller decimal part
-        [ $int -gt 0 ] && printf '%s' "$int"
-        printf '\.('
+        if [ "$int" = 0 ]; then
+            # in the case of 0.xxx, the integral part is optional
+            printf '0|'
+        else
+            printf '%s' "$int"
+        fi
+        # the decimal part is of course optional, since no decimal part => smaller
+        printf '((\.0*)?|\.('
 
         digitsbefore=''
         digitsafter=''
@@ -271,7 +282,7 @@ lt()
             digitsbefore="${digitsbefore}${digit}"
         done
 
-        printf ')\d*'
+        printf ')\d*)'
     fi
     printf ')'
 }
