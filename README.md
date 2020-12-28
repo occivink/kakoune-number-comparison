@@ -15,11 +15,28 @@ number-comparison [-no-bounds-check] [-register REGISTER] OPERATOR NUMBER
 ```
 `OPERATOR` and `NUMBER` are mandatory. `OPERATOR` must be one of  `<`,`<=`,`>=`,`=`,`!=`. `NUMBER` is the number to be compared to, it may be any integer.
 
-The command sets the `/` (search) register to a regular expression that will match any integer such that `MATCH OPERATOR NUMBER` is fulfilled. For example, after calling `number-comparison < 3`, numbers smaller than `3` (such as `1`, `0`, `-011`)  will be matched.
+The command sets the `/` (search) register to a regular expression that will match any integer such that `MATCH OPERATOR NUMBER` is fulfilled. For example, after calling `number-comparison < 3`, numbers smaller than `3` (such as `2.99`, `1`, `0`, `-011`)  will be matched.
 
-By default, the regex will be surrounded by the lookarounds `(?<![0-9-])` and `(?![0-9-])`, to avoid partial number matches. This can be disabled with the `-no-bounds-check` flags.
+By default, the regex will be surrounded by the lookarounds `(?<![0-9-.])` and `(?![0-9.])`, to avoid partial number matches. This can be disabled with the `-no-bounds-check` flag.
 
 A register other than `/` may be specified with `-register`.
+
+### Number format
+
+The number format for both input (the command argument) and output (the matched numbers) is represented by the regex `-?(\d+(\.\d*)?|\.\d+)`.
+Practically speaking, this means positive and negative with an optional decimal part. Some examples include:
+
+```
+0
+10
+-0123
+0001
+5.8
+27.
+0.1200
+.25
+-.25
+```
 
 ### Standalone usage
 

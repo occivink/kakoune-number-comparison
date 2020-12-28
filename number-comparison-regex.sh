@@ -274,9 +274,6 @@ lt()
                 alternation='|'
                 print_range 0 "$((digit - 1))"
             fi
-            # 0.0101
-            #  .00
-            #  .0100
 
             tmp="$digitsafter"
             digitsbefore="${digitsbefore}${digit}"
@@ -431,12 +428,3 @@ else
         exit 1
     fi
 fi
-
-#123.123
-#
-#1-9\d\d\d
-#1[3-9]\d
-#12[4-9]
-#123.[2-9]\d*
-#123.1[3-9]\d*
-#123.12[4-9]\d*
