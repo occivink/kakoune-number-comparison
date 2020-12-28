@@ -170,25 +170,30 @@ gt()
     # then, numbers that have the same integral part, but a bigger decimal part
     printf '|%s' "$int"
     [ $int = 0 ] && printf '?'
-    printf '\.('
-    printf '%s\d*[1-9]' "$dec"
 
-    digitsbefore=''
-    digitsafter=''
-    tmp="$dec"
-    while [ -n "$tmp" ]; do
-        digitsafter="${tmp#?}"
-        digit="${tmp%"$digitsafter"}"
+    if [ "$dec" = '' ]; then
+        printf '\.\d*[1-9]\d*'
+    else
+        printf '\.('
+        printf '%s\d*[1-9]' "$dec"
 
-        if [ $digit -lt 9 ]; then
-            printf '|%s' "$digitsbefore"
-            print_range "$((digit + 1 ))" 9
-        fi
+        digitsbefore=''
+        digitsafter=''
+        tmp="$dec"
+        while [ -n "$tmp" ]; do
+            digitsafter="${tmp#?}"
+            digit="${tmp%"$digitsafter"}"
 
-        tmp="$digitsafter"
-        digitsbefore="${digitsbefore}${digit}"
-    done
-    printf ')\d*'
+            if [ $digit -lt 9 ]; then
+                printf '|%s' "$digitsbefore"
+                print_range "$((digit + 1 ))" 9
+            fi
+
+            tmp="$digitsafter"
+            digitsbefore="${digitsbefore}${digit}"
+        done
+        printf ')\d*'
+    fi
     printf ')'
 }
 
