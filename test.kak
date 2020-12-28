@@ -59,22 +59,24 @@ define-command check-matches -params 3 %{
         # need to remove leading 0 because of stupid octal rules...
         # shouldn't impact operations though
         case "$val" in
-            0|-0|00|-00|000000|-000000) val=0 ;;
-            00000*) val="${val#00000}" ;;
-            0*) val="${val#0}" ;;
-            -00000*) val="-${val#-00000}" ;;
-            -0*) val="-${val#-0}" ;;
+            0|-0|00|-00|000000|-000000) valcanon=0 ;;
+            00000*) valcanon="${val#00000}" ;;
+            0*) valcanon="${val#0}" ;;
+            -00000*) valcanon="-${val#-00000}" ;;
+            -0*) valcanon="-${val#-0}" ;;
+            *) valcanon="${val}" ;;
         esac
         eval set -- "$kak_selections"
 for number; do
             case "$number" in
-                0|-0|00|-00|000000|-000000) number=0 ;;
-                00000*) number="${number#00000}" ;;
-                0*) number="${number#0}" ;;
-                -00000*) number="-${number#-00000}" ;;
-                -0*) number="-${number#-0}" ;;
+                0|-0|00|-00|000000|-000000) numcanon=0 ;;
+                00000*) numcanon="${number#00000}" ;;
+                0*) numcanon="${number#0}" ;;
+                -00000*) numcanon="-${number#-00000}" ;;
+                -0*) numcanon="-${number#-0}" ;;
+                *) numcanon=${number} ;;
             esac
-            if [ $not "$number" "$op" "$val" ]; then
+            if [ $not "$numcanon" "$op" "$val" ]; then
                 :
             else
                 printf 'echo -debug "comparison failed %s %s %s %s"\n' "$not" "$number" "$op" "$val";
