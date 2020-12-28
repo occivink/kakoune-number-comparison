@@ -1,7 +1,7 @@
 #!/bin/sh
 
 op=''
-strict=''
+
 sign=''
 num=''
 int=''
@@ -11,13 +11,13 @@ is_zero=''
 parse_operator()
 {
     case "$1" in
-      "<") strict='y' ;;
-      "<=") strict='n' ;;
-      ">") strict='y' ;;
-      ">=") strict='n' ;;
-      "=") strict='y' ;;
-      "==") strict='y' ;;
-      "!=") strict='y' ;;
+      "<") ;;
+      "<=") ;;
+      ">") ;;
+      ">=") ;;
+      "=") ;;
+      "==") ;;
+      "!=") ;;
       *) return 1 ;;
     esac
     op="$1"
@@ -292,7 +292,7 @@ equal()
 compare()
 {
 
-    if [ "$op" = '' ] || [ "$strict" = '' ]; then
+    if [ "$op" = '' ]; then
         exit 1
     fi
     if [ "$sign" = '' ] || [ "$num" = '' ] || [ "$int" = '' ]; then
@@ -316,7 +316,7 @@ compare()
         elif [ "$sign" = '+' ]; then
             printf '('
             gt
-            if [ "$strict" = 'n' ]; then
+            if [ "$op" = '>=' ]; then
                 printf '|'
                 equal
             fi
@@ -324,7 +324,7 @@ compare()
         elif [ "$sign" = '-' ]; then
             printf -- '(-('
             lt
-            if [ "$strict" = 'n' ]; then
+            if [ "$op" = '>=' ]; then
                 printf '|'
                 equal
             fi
@@ -348,7 +348,7 @@ compare()
         elif [ "$sign" = '+' ]; then
             printf '('
             lt
-            if [ "$strict" = n ]; then
+            if [ "$op" = '<=' ]; then
                 printf '|'
                 equal
             fi
@@ -359,7 +359,7 @@ compare()
             printf -- '-'
             printf '('
             gt
-            if [ "$strict" = n ]; then
+            if [ "$op" = '<=' ]; then
                 printf '|'
                 equal
             fi
