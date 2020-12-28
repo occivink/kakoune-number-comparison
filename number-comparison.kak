@@ -53,9 +53,9 @@ number-comparison [-register REG] [-no-bounds-check] OP NUM
         fi
         # the generated regex shouldn't contain any ' ... I think
         printf "set-register %s '" "$register"
-        [ "$boundaries" = y ] && printf '(?<![0-9-])'
+        [ "$boundaries" = y ] && printf '(?<![0-9-.])'
         compare "$op" "$number"
-        [ "$boundaries" = y ] && printf '(?![0-9-])'
+        [ "$boundaries" = y ] && printf '(?![0-9.])'
         printf "'\n"
         printf "echo -markup \"{Information}{\}register '%s' set to '%%reg{%s}'\"\n" "$register" "$register"
     }
