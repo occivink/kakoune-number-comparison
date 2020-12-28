@@ -13,6 +13,14 @@ define-command start-test -params 1 %{
             printf -- '0%%s\n' $i
             printf -- '00000%%s\n' $i
         done
+        for sign in '' '-'; do
+            for int in '' 100 010 10 05 5 1 0; do
+                for dec in '' 0 00 1 01 05 10 005 080800; do
+                    [ ""$int"" = '' ] && [ ""$dec"" = '' ] && continue
+                    printf -- '%%s.%%s\n' ""$int"" ""$dec""
+                done
+            done
+        done
     "
     exec '|<ret>'
     exec '%<a-s>H'
@@ -87,7 +95,7 @@ define-command check-matches -params 3 %{
             }
             if (!res) {
                 sp = \" \";
-                print(\"echo -debug 'failed: comparison failed\" sp not sp num sp op sp ref \"'\");
+                print(\"echo -debug 'failed: invalid comparison \" sp not sp \$0 sp op sp \"$ref\" \"'\");
             }
         }"
     }
