@@ -1,6 +1,14 @@
 #!/bin/sh
 
-is_operator()
+op=''
+
+sign=''
+num=''
+int=''
+dec=''
+is_zero=''
+
+parse_operator()
 {
     case "$1" in
       "<") ;;
@@ -12,20 +20,72 @@ is_operator()
       "!=") ;;
       *) return 1 ;;
     esac
+    op="$1"
+    [ "$op" = '==' ] && op='='
+    return 0
 }
 
-is_number()
+parse_number()
 {
+    [ "$1" = '' ] && return 1;
+
+    # parse sign
     num="$1"
     case "$num" in
-      "+"*) num=${num#+} ;;
-      "-"*) num=${num#-} ;;
-      *) ;;
+      "+"*) num=${num#+} ; sign='+' ;;
+      "-"*) num=${num#-} ; sign='-' ;;
+      *) sign="+" ;;
     esac
-    case "$num" in
+
+    # parse integral and decimal part
+    int=${num%.*}
+    dec=${num#*.}
+    [ "$dec" = "$num" ] && dec=''
+    if [ "$int" = '' ] && [ "$dec" = '' ]; then
+        return 1
+    fi
+
+    # remove leading zeroes of integral part
+    tmp="$int"
+    while :; do
+        int=${tmp#0}
+        [ "$tmp" = "$int" ] && break
+        tmp=$int
+    done
+    [ "$int" = '' ] && int='0'
+
+    # validate integral part
+    case "$int" in
        *[!0-9]*|'') return 1 ;;
        *) ;;
     esac
+
+    # remove trailing zeroes of decimal part
+    tmp="$dec"
+    while :; do
+        dec=${tmp%0}
+        [ "$tmp" = "$dec" ] && break
+        tmp=$dec
+    done
+
+    # validate decimal part
+    if [ "$dec" != "" ]; then
+        case "$dec" in
+           *[!0-9]*|'') return 1 ;;
+           *) ;;
+        esac
+    fi
+
+    if [ "$int" = '0' ] && [ "$dec" = '' ]; then
+        # turn -0 into +0
+        [ "$sign" = "-" ] && sign='+'
+        is_zero=y
+    else
+        is_zero=n
+    fi
+
+    # debug code
+    #printf '%s%s.%s\n' $sign $int $dec
 }
 
 print_range()
@@ -62,18 +122,32 @@ print_repeat()
     fi
 }
 
+any_zero()
+{
+    printf -- '0+(\.0*)?|\.0+'
+}
+
+any_number()
+{
+    printf -- '\d+(\.\d*)?|\.\d+'
+}
+
+any_positive_number()
+{
+    printf -- '0*[1-9]\d*(\.\d*)?|0*\.0*[1-9]\d*'
+}
+
 gt()
 {
-    num="$1"
-    strict="$2"
-
     printf '0*('
-    printf '[1-9]\d'
-    print_repeat "${#num}" ''
+
+    # first, numbers that have a bigger integral part
+    printf '([1-9]\d'
+    print_repeat "${#int}" ''
 
     digitsbefore=''
     digitsafter=''
-    tmp="$num"
+    tmp="$int"
     while [ -n "$tmp" ]; do
         digitsafter="${tmp#?}"
         digit="${tmp%"$digitsafter"}"
@@ -90,140 +164,249 @@ gt()
         tmp="$digitsafter"
         digitsbefore="${digitsbefore}${digit}"
     done
-    if [ $strict = "n" ]; then
-        printf '|%s' "$num"
+    # accept any decimal part
+    printf ')(\.\d*)?'
+
+    # then, numbers that have the same integral part, but a bigger decimal part
+    printf '|%s' "$int"
+    [ $int = 0 ] && printf '?'
+
+    if [ "$dec" = '' ]; then
+        printf '\.\d*[1-9]\d*'
+    else
+        printf '\.('
+        printf '%s\d*[1-9]' "$dec"
+
+        digitsbefore=''
+        digitsafter=''
+        tmp="$dec"
+        while [ -n "$tmp" ]; do
+            digitsafter="${tmp#?}"
+            digit="${tmp%"$digitsafter"}"
+
+            if [ $digit -lt 9 ]; then
+                printf '|%s' "$digitsbefore"
+                print_range "$((digit + 1 ))" 9
+            fi
+
+            tmp="$digitsafter"
+            digitsbefore="${digitsbefore}${digit}"
+        done
+        printf ')\d*'
     fi
     printf ')'
 }
 
 lt()
 {
-    num="$1"
-    strict="$2"
+    if [ "$is_zero" = 'y' ]; then
+        exit 1
+    fi
 
-    if [ ${#num} -eq 1 ]; then
-        if [ $strict = "n" ]; then
-            printf '0*'
-            print_range 0 "$num"
-        else
-            if [ "$num" = '0' ]; then
-                # should not reach here
-                exit 1
+    printf '0*('
+
+    had_int='n'
+
+    # number with a smaller integral part (must be >0)
+    if [ "$int" -gt 0 ]; then
+        had_int='y'
+        if [ "$int" -gt 1 ]; then
+            if [ "${#int}" -eq 1 ]; then
+                print_range 0 "$((int - 1))"
             else
-                printf '0*'
-                print_range 0 "$((num - 1))"
+                printf '('
+                # numbers that have fewer digits (duh)
+                printf '\d'
+                print_repeat '1' "$((${#int} - 1))"
+                # same number of digits, but that are smaller
+                digitsbefore=''
+                digitsafter=''
+                tmp="$int"
+                while [ -n "$tmp" ]; do
+                    digitsafter="${tmp#?}"
+                    digit="${tmp%"$digitsafter"}"
+
+                    if [ $digit -eq 1 ] && [ -n "$digitsbefore" ] || [ $digit -gt 1 ]; then
+                        printf '|%s' "$digitsbefore"
+                        if [ -n "$digitsbefore" ]; then
+                            print_range 0 "$((digit - 1))"
+                        else
+                            print_range 1 "$((digit - 1))"
+                        fi
+                        if [ -n "$digitsafter" ]; then
+                            printf '\d'
+                            print_repeat ${#digitsafter}
+                        fi
+                    fi
+
+                    tmp="$digitsafter"
+                    digitsbefore="${digitsbefore}${digit}"
+                done
+                printf ')'
             fi
+        else
+            printf '0'
         fi
-    else
-        printf '0*(\d'
-        print_repeat '1' "$((${#num} -1))"
+        # accept any decimal part
+        printf '(\.\d*)?'
+        # as well as no integral part (= 0)
+        printf '|\.\d+'
+    fi
+
+    if [ "$dec" != "" ]; then
+        [ "$had_int" = y ] && printf '|'
+
+        # then, numbers that have the same integral part, but a smaller decimal part
+        if [ "$int" = 0 ]; then
+            # in the case of 0.xxx, the integral part is optional
+            printf '0|'
+        else
+            printf '%s' "$int"
+        fi
+        # the decimal part is of course optional, since no decimal part => smaller
+        printf '((\.0*)?|\.('
 
         digitsbefore=''
         digitsafter=''
-        tmp="$num"
+        alternation=''
+        tmp="$dec"
         while [ -n "$tmp" ]; do
             digitsafter="${tmp#?}"
             digit="${tmp%"$digitsafter"}"
 
-            if [ $digit -eq 1 ] && [ -n "$digitsbefore"  ] || [ $digit -gt 1 ]; then
-                printf '|%s' "$digitsbefore"
-                if [ -n "$digitsbefore" ]; then
-                    print_range 0 "$((digit - 1))"
-                else
-                    print_range 1 "$((digit - 1))"
-                fi
-                if [ -n "$digitsafter" ]; then
-                    printf '\d'
-                    print_repeat ${#digitsafter}
-                fi
+            if [ $digit -ge 1 ]; then
+                printf '%s%s' "$alternation" "$digitsbefore"
+                alternation='|'
+                print_range 0 "$((digit - 1))"
             fi
 
             tmp="$digitsafter"
             digitsbefore="${digitsbefore}${digit}"
         done
-        if [ $strict = "n" ]; then
-            printf '|%s' "$num"
-        fi
-        printf ')'
+
+        printf ')\d*)'
+    fi
+    printf ')'
+}
+
+equal()
+{
+    if [ "$int" = 0 ] && [ "$dec" = '' ]; then
+        printf -- '0+(\.0*)?|\.0+'
+    elif [ $int = 0 ]; then
+        printf -- '0*\.%s0*' "$dec"
+    elif [ "$dec" = '' ]; then
+        printf -- '0*%s(\.0*)?' "$int"
+    else
+        printf -- '0*%s\.%s0*' "$int" "$dec"
     fi
 }
 
 compare()
 {
-    op="$1"
-    [ "$op" = '==' ] && op='='
 
-    tmp="$2"
-    sign=''
-    case "$tmp" in
-      "+"*) tmp=${tmp#+} ; sign='+' ;;
-      "-"*) tmp=${tmp#-} ; sign='-' ;;
-      *) sign="+" ;;
-    esac
-
-    while :; do
-        num=${tmp#0}
-        [ "$tmp" = "$num" ] && break
-        tmp=$num
-    done
-    if [ "$num" = '' ]; then
-        num='0';
-        if [ "$sign" = "-" ]; then
-            sign='+'
-        fi
+    if [ "$op" = '' ]; then
+        exit 1
+    fi
+    if [ "$sign" = '' ] || [ "$num" = '' ] || [ "$int" = '' ]; then
+        exit 1
     fi
 
     if [ "$op" = '>' ] || [ "$op" = '>=' ]; then
-        [ "$op" = '>' ] && strict='y' || strict='n'
-        if [ "$op" = ">=" ] && [ "$num" = '0' ]; then
-            printf -- '(-0+|\d+)'
-        elif [ "$sign" = '+' ]; then
-            gt "$num" "$strict"
-        else
-            printf -- '(-'
-            lt "$num" "$strict"
-            printf -- '|\d+)'
-        fi
-    elif [ "$op" = "<" ] || [ "$op" = "<=" ]; then
-        [ "$op" = '<' ] && strict='y' || strict='n'
-        # special case for <0
-        if [ "$op" = '<' ] && [ "$num" = '0' ]; then
-            printf -- '-0*[1-9]\d*'
-        elif [ "$sign" = '+' ]; then
-            printf -- '('
-            lt "$num" "$strict"
-            printf -- '|-\d+)'
-        else
-            printf -- '-'
-            gt "$num" "$strict"
-        fi
-    elif [ "$op" = "=" ]; then
-        if [ "$num" = 0 ]; then
-            printf -- '-?0+'
-        elif [ "$sign" = '+' ]; then
-            printf -- '0*%s' "$num"
-        else
-            printf -- '-0*%s' "$num"
-        fi
-    elif [ "$op" = "!=" ]; then
-        strict='y'
-        # special case for 0... again
-        if [ $num = '0' ]; then
-            printf -- '-?\d*[1-9]\d*'
+        if [ "$is_zero" = 'y' ]; then
+            if [ "$op" = '>=' ]; then
+                # tricky -0 case
+                printf -- '(-('
+                any_zero
+                printf -- ')|'
+                any_number
+                printf ')'
+            else
+                printf '('
+                any_positive_number
+                printf ')'
+            fi
         elif [ "$sign" = '+' ]; then
             printf '('
-            gt "$num" "$strict"
-            printf -- '|'
-            lt "$num" "$strict"
-            printf -- '|-\d+)'
-        else
-            printf '(-'
-            gt "$num" "$strict"
-            printf -- '|-'
-            lt "$num" "$strict"
-            printf -- '|\d+)'
+            gt
+            if [ "$op" = '>=' ]; then
+                printf '|'
+                equal
+            fi
+            printf ')'
+        elif [ "$sign" = '-' ]; then
+            printf -- '(-('
+            lt
+            if [ "$op" = '>=' ]; then
+                printf '|'
+                equal
+            fi
+            printf  ')|'
+            any_number
+            printf ')'
         fi
-
+    elif [ "$op" = "<" ] || [ "$op" = "<=" ]; then
+        if [ "$is_zero" = 'y' ]; then
+            if [ "$op" = '<' ]; then
+                printf -- '-('
+                any_positive_number
+                printf ')'
+            else
+                printf '('
+                any_zero
+                printf -- '|-('
+                any_number
+                printf '))'
+            fi
+        elif [ "$sign" = '+' ]; then
+            printf '('
+            lt
+            if [ "$op" = '<=' ]; then
+                printf '|'
+                equal
+            fi
+            printf  '|-('
+            any_number
+            printf '))'
+        elif [ "$sign" = '-' ]; then
+            printf -- '-'
+            printf '('
+            gt
+            if [ "$op" = '<=' ]; then
+                printf '|'
+                equal
+            fi
+            printf ')'
+        fi
+    elif [ "$op" = "=" ]; then
+        [ "$sign" = '-' ] && printf -- '-'
+        [ "$is_zero" = 'y' ] && printf -- '-?'
+        printf -- '('
+        equal
+        printf -- ')'
+    elif [ "$op" = "!=" ]; then
+        # special case for 0... again
+        if [ "$is_zero" = 'y' ]; then
+            printf -- '-?('
+            any_positive_number
+            printf ')'
+        elif [ "$sign" = '+' ]; then
+            printf '('
+            gt
+            printf -- '|'
+            lt
+            printf '|-('
+            any_number
+            printf '))'
+        else
+            printf -- '(-('
+            gt
+            printf -- ')|-('
+            lt
+            printf -- ')|'
+            any_number
+            printf ')'
+        fi
     fi
 }
 
@@ -235,15 +418,15 @@ else
         echo Missing arguments
         exit 1
     fi
-    if ! is_operator "$1"; then
+    if ! parse_operator "$1"; then
         echo "$1" is not a valid operator
         exit 1
     fi
-    if ! is_number "$2"; then
+    if ! parse_number "$2"; then
         echo "$2" is not a valid number
         exit 1
     fi
-    compare "$1" "$2"
+    compare
     if [ $? -eq 0 ]; then
         printf '\n'
     else
