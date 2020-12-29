@@ -8,6 +8,9 @@ int=''
 dec=''
 is_zero=''
 
+with_negative='y'
+with_decimal='y'
+
 parse_operator()
 {
     case "$1" in
@@ -37,10 +40,21 @@ parse_number()
       *) sign="+" ;;
     esac
 
+    if [ "$with_negative" != 'y' ] && [ "$sign" = '-' ]; then
+        return 1
+    fi
+
     # parse integral and decimal part
     int=${num%.*}
     dec=${num#*.}
-    [ "$dec" = "$num" ] && dec=''
+    if [ "$dec" = "$num" ]; then
+        # no decimal part
+        dec=''
+    else
+        if [ "$with_decimal" != 'y' ]; then
+            return 1
+        fi
+    fi
     if [ "$int" = '' ] && [ "$dec" = '' ]; then
         return 1
     fi
@@ -124,17 +138,29 @@ print_repeat()
 
 any_zero()
 {
-    printf -- '0+(\.0*)?|\.0+'
+    if [ "$with_decimal" = 'y' ]; then
+        printf -- '0+(\.0*)?|\.0+'
+    else
+        printf -- '0+'
+    fi
 }
 
 any_number()
 {
-    printf -- '\d+(\.\d*)?|\.\d+'
+    if [ "$with_decimal" = 'y' ]; then
+        printf -- '\d+(\.\d*)?|\.\d+'
+    else
+        printf -- '\d+'
+    fi
 }
 
 any_positive_number()
 {
-    printf -- '0*[1-9]\d*(\.\d*)?|0*\.0*[1-9]\d*'
+    if [ "$with_decimal" = 'y' ]; then
+        printf -- '0*[1-9]\d*(\.\d*)?|0*\.0*[1-9]\d*'
+    else
+        printf -- '0*[1-9]\d*'
+    fi
 }
 
 gt()
@@ -165,34 +191,38 @@ gt()
         digitsbefore="${digitsbefore}${digit}"
     done
     # accept any decimal part
-    printf ')(\.\d*)?'
+    printf ')'
 
-    # then, numbers that have the same integral part, but a bigger decimal part
-    printf '|%s' "$int"
-    [ $int = 0 ] && printf '?'
+    if [ "$with_decimal" = 'y' ]; then
+        printf '(\.\d*)?'
 
-    if [ "$dec" = '' ]; then
-        printf '\.\d*[1-9]\d*'
-    else
-        printf '\.('
-        printf '%s\d*[1-9]' "$dec"
+        # then, numbers that have the same integral part, but a bigger decimal part
+        printf '|%s' "$int"
+        [ $int = 0 ] && printf '?'
 
-        digitsbefore=''
-        digitsafter=''
-        tmp="$dec"
-        while [ -n "$tmp" ]; do
-            digitsafter="${tmp#?}"
-            digit="${tmp%"$digitsafter"}"
+        if [ "$dec" = '' ]; then
+            printf '\.\d*[1-9]\d*'
+        else
+            printf '\.('
+            printf '%s\d*[1-9]' "$dec"
 
-            if [ $digit -lt 9 ]; then
-                printf '|%s' "$digitsbefore"
-                print_range "$((digit + 1 ))" 9
-            fi
+            digitsbefore=''
+            digitsafter=''
+            tmp="$dec"
+            while [ -n "$tmp" ]; do
+                digitsafter="${tmp#?}"
+                digit="${tmp%"$digitsafter"}"
 
-            tmp="$digitsafter"
-            digitsbefore="${digitsbefore}${digit}"
-        done
-        printf ')\d*'
+                if [ $digit -lt 9 ]; then
+                    printf '|%s' "$digitsbefore"
+                    print_range "$((digit + 1 ))" 9
+                fi
+
+                tmp="$digitsafter"
+                digitsbefore="${digitsbefore}${digit}"
+            done
+            printf ')\d*'
+        fi
     fi
     printf ')'
 }
@@ -247,13 +277,15 @@ lt()
         else
             printf '0'
         fi
-        # accept any decimal part
-        printf '(\.\d*)?'
-        # as well as no integral part (= 0)
-        printf '|\.\d+'
+        if [ "$with_decimal" = 'y' ]; then
+            # accept any decimal part
+            printf '(\.\d*)?'
+            # as well as no integral part (= 0)
+            printf '|\.\d+'
+        fi
     fi
 
-    if [ "$dec" != "" ]; then
+    if [ "$with_decimal" = 'y' ] && [ "$dec" != "" ]; then
         [ "$had_int" = y ] && printf '|'
 
         # then, numbers that have the same integral part, but a smaller decimal part
@@ -291,37 +323,46 @@ lt()
 
 equal()
 {
-    if [ "$int" = 0 ] && [ "$dec" = '' ]; then
-        printf -- '0+(\.0*)?|\.0+'
-    elif [ $int = 0 ]; then
-        printf -- '0*\.%s0*' "$dec"
-    elif [ "$dec" = '' ]; then
-        printf -- '0*%s(\.0*)?' "$int"
+    if [ "$with_decimal" = 'y' ]; then
+        if [ "$int" = 0 ] && [ "$dec" = '' ]; then
+            printf -- '0+(\.0*)?|\.0+'
+        elif [ $int = 0 ]; then
+            printf -- '0*\.%s0*' "$dec"
+        elif [ "$dec" = '' ]; then
+            printf -- '0*%s(\.0*)?' "$int"
+        else
+            printf -- '0*%s\.%s0*' "$int" "$dec"
+        fi
     else
-        printf -- '0*%s\.%s0*' "$int" "$dec"
+        printf -- '0*%s' "$int"
     fi
 }
 
+# returns 126 if the comparison is not possible
+# 0 in case of success
 compare()
 {
 
     if [ "$op" = '' ]; then
-        exit 1
+        return 1
     fi
     if [ "$sign" = '' ] || [ "$num" = '' ] || [ "$int" = '' ]; then
-        exit 1
+        return 1
     fi
 
     if [ "$op" = '>' ] || [ "$op" = '>=' ]; then
         if [ "$is_zero" = 'y' ]; then
             if [ "$op" = '>=' ]; then
-                # tricky -0 case
-                printf -- '(-('
-                any_zero
-                printf -- ')|'
+                printf -- '('
+                if [ "$with_negative" = 'y' ]; then
+                    # tricky -0 case
+                    printf -- '-('
+                    any_zero
+                    printf -- ')|'
+                fi
                 any_number
                 printf ')'
-            else
+            elif [ "$op" = '>' ]; then
                 printf '('
                 any_positive_number
                 printf ')'
@@ -335,6 +376,7 @@ compare()
             fi
             printf ')'
         elif [ "$sign" = '-' ]; then
+            # with_negative == y
             printf -- '(-('
             lt
             if [ "$op" = '>=' ]; then
@@ -348,15 +390,22 @@ compare()
     elif [ "$op" = "<" ] || [ "$op" = "<=" ]; then
         if [ "$is_zero" = 'y' ]; then
             if [ "$op" = '<' ]; then
-                printf -- '-('
-                any_positive_number
-                printf ')'
-            else
+                if [ "$with_negative" = 'y' ]; then
+                    printf -- '-('
+                    any_positive_number
+                    printf ')'
+                else
+                    return 126
+                fi
+            elif [ "$op" = '<=' ]; then
                 printf '('
                 any_zero
-                printf -- '|-('
-                any_number
-                printf '))'
+                if [ "$with_negative" = 'y' ]; then
+                    printf -- '|-('
+                    any_number
+                    printf ')'
+                fi
+                printf ')'
             fi
         elif [ "$sign" = '+' ]; then
             printf '('
@@ -365,10 +414,14 @@ compare()
                 printf '|'
                 equal
             fi
-            printf  '|-('
-            any_number
-            printf '))'
+            if [ "$with_negative" = 'y' ]; then
+                printf  '|-('
+                any_number
+                printf ')'
+            fi
+            printf ')'
         elif [ "$sign" = '-' ]; then
+            # with_negative == y
             printf -- '-'
             printf '('
             gt
@@ -380,14 +433,15 @@ compare()
         fi
     elif [ "$op" = "=" ]; then
         [ "$sign" = '-' ] && printf -- '-'
-        [ "$is_zero" = 'y' ] && printf -- '-?'
+        [ "$with_negative" ] && [ "$is_zero" = 'y' ] && printf -- '-?'
         printf -- '('
         equal
         printf -- ')'
     elif [ "$op" = "!=" ]; then
         # special case for 0... again
         if [ "$is_zero" = 'y' ]; then
-            printf -- '-?('
+            [ "$with_negative" = 'y' ] && printf -- '-?'
+            printf -- '('
             any_positive_number
             printf ')'
         elif [ "$sign" = '+' ]; then
@@ -395,10 +449,14 @@ compare()
             gt
             printf -- '|'
             lt
-            printf '|-('
-            any_number
-            printf '))'
-        else
+            if [ "$with_negative" = y ]; then
+                printf '|-('
+                any_number
+                printf ')'
+            fi
+            printf ')'
+        elif [ "$sign" = '-' ]; then
+            # with_negative == y
             printf -- '(-('
             gt
             printf -- ')|-('
@@ -408,6 +466,7 @@ compare()
             printf ')'
         fi
     fi
+    return 0
 }
 
 # silly mechanism to disable the auto-comparison when sourcing the script
@@ -427,9 +486,14 @@ else
         exit 1
     fi
     compare
-    if [ $? -eq 0 ]; then
-        printf '\n'
+    res="$?"
+    if [ $res = 126 ]; then
+        printf 'Invalid comparison\n'
+        return 1
+    elif [ $res != 0 ]; then
+        printf 'Internal error\n'
+        return 1
     else
-        exit 1
+        printf '\n'
     fi
 fi
