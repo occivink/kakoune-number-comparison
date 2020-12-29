@@ -102,6 +102,15 @@ parse_number()
     #printf '%s%s.%s\n' $sign $int $dec
 }
 
+can_compare()
+{
+    if [ "$op" = '<' ] && [ "$is_zero" = 'y' ] && [ "$with_negative" != "y" ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
 print_range()
 {
     if [ $1 = $2 ]; then
@@ -338,8 +347,6 @@ equal()
     fi
 }
 
-# returns 126 if the comparison is not possible
-# 0 in case of success
 compare()
 {
 
@@ -395,7 +402,7 @@ compare()
                     any_positive_number
                     printf ')'
                 else
-                    return 126
+                    return 1
                 fi
             elif [ "$op" = '<=' ]; then
                 printf '('
@@ -485,12 +492,12 @@ else
         echo "$2" is not a valid number
         exit 1
     fi
+    if ! can_compare ; then
+        echo Invalid comparison: "\"$1 $2\""
+        exit 1 
+    fi
     compare
-    res="$?"
-    if [ $res = 126 ]; then
-        printf 'Invalid comparison\n'
-        return 1
-    elif [ $res != 0 ]; then
+    if [ $? != 0 ]; then
         printf 'Internal error\n'
         return 1
     else

@@ -1,8 +1,10 @@
 declare-option -hidden str number_comparison_install_path %sh{dirname "$kak_source"}
 
 define-command number-comparison -params .. -docstring "
-number-comparison [-register REG] [-no-bounds-check] OP NUM
-" %{
+number-comparison [-register REG] [-no-bounds-check] [-no-negative] [-no-decimal] OPERATOR NUMBER
+" -shell-script-candidates %{
+    printf '%s\n' -register -no-bounds-check -no-negative -no-decimal
+} %{
     eval %sh{
         NOAUTOCOMPARE=''
         . "$kak_opt_number_comparison_install_path"/number-comparison-regex.sh
@@ -27,6 +29,10 @@ number-comparison [-register REG] [-no-bounds-check] OP NUM
                 shift
             elif [ "$arg" = '-no-bounds-check' ]; then
                 boundaries='n'
+            elif [ "$arg" = '-no-negative' ]; then
+                with_negative='n'
+            elif [ "$arg" = '-no-decimal' ]; then
+                with_decimal='n'
             elif [ -z "$op" ]; then
                 if ! parse_operator "$arg"; then
                     printf "fail \"Invalid operator '%%arg{%s}'\"" "$arg_num"
@@ -51,11 +57,23 @@ number-comparison [-register REG] [-no-bounds-check] OP NUM
             echo 'fail "Missing number"'
             exit 1
         fi
+        if ! can_compare; then
+            echo 'fail "Invalid comparison"'
+        fi
         # the generated regex shouldn't contain any ' ... I think
         printf "set-register %s '" "$register"
-        [ "$boundaries" = y ] && printf '(?<![0-9-.])'
+        if [ "$boundaries" = y ]; then
+            printf '(?<![0-9'
+            [ "$with_negative" = 'y' ] && printf '-'
+            [ "$with_decimal" = 'y' ] && printf '.'
+            printf '])'
+        fi
         compare "$op" "$number"
-        [ "$boundaries" = y ] && printf '(?![0-9.])'
+        if [ "$boundaries" = y ]; then
+            printf '(?![0-9'
+            [ "$with_decimal" = 'y' ] && printf '.'
+            printf '])'
+        fi
         printf "'\n"
         printf "echo -markup \"{Information}{\}register '%s' set to '%%reg{%s}'\"\n" "$register" "$register"
     }
