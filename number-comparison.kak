@@ -6,7 +6,7 @@ Switches:
     -no-bounds-check: The surrounding with lookarounds is disabled
     -no-negative: The matching of negative numbers is disabled
     -no-decimal: The matching of decimal numbers is disabled
-    -register <reg>: The register <ret> (instead of /) will be used to store the result
+    -register <reg>: The register <reg> (instead of /) will be used to store the result
     -prepend <pre>: The resulting regex is prefixed with <pre>
     -append <post>: The resulting regex is suffixed with <post>
 " -shell-script-candidates %{
@@ -23,42 +23,53 @@ Switches:
         boundaries='y'
         prefix=''
         suffix=''
+        accept_switch='y'
         while [ $# -ne 0 ]; do
             arg_num=$((arg_num + 1))
             arg=$1
             shift
-            if [ "$arg" = '-register' ]; then
-                if [ $# -eq 0 ]; then
-                    echo 'fail "Missing argument to -register"'
-                    exit 1
+            if [ "$accept_switch" = 'y' ]; then
+                got_switch='y'
+                if [ "$arg" = '-register' ]; then
+                    if [ $# -eq 0 ]; then
+                        echo 'fail "Missing argument to -register"'
+                        exit 1
+                    fi
+                    # the set-register will later check that it's a valid one
+                    arg_num=$((arg_num + 1))
+                    register=$1
+                    shift
+                elif [ "$arg" = '-no-bounds-check' ]; then
+                    boundaries='n'
+                elif [ "$arg" = '-no-negative' ]; then
+                    with_negative='n'
+                elif [ "$arg" = '-no-decimal' ]; then
+                    with_decimal='n'
+                elif [ "$arg" = '-prepend' ]; then
+                    if [ $# -eq 0 ]; then
+                        echo 'fail "Missing argument to -prepend"'
+                        exit 1
+                    fi
+                    arg_num=$((arg_num + 1))
+                    prefix=$1
+                    shift
+                elif [ "$arg" = '-append' ]; then
+                    if [ $# -eq 0 ]; then
+                        echo 'fail "Missing argument to -append"'
+                        exit 1
+                    fi
+                    arg_num=$((arg_num + 1))
+                    suffix=$1
+                    shift
+                elif [ "$arg" = '--' ]; then
+                    accept_switch='n'
+                else
+                    accept_switch='n'
+                    got_switch='n'
                 fi
-                # the set-register will later check that it's a valid one
-                arg_num=$((arg_num + 1))
-                register=$1
-                shift
-            elif [ "$arg" = '-no-bounds-check' ]; then
-                boundaries='n'
-            elif [ "$arg" = '-no-negative' ]; then
-                with_negative='n'
-            elif [ "$arg" = '-no-decimal' ]; then
-                with_decimal='n'
-            elif [ "$arg" = '-prepend' ]; then
-                if [ $# -eq 0 ]; then
-                    echo 'fail "Missing argument to -prepend"'
-                    exit 1
-                fi
-                arg_num=$((arg_num + 1))
-                prefix=$1
-                shift
-            elif [ "$arg" = '-append' ]; then
-                if [ $# -eq 0 ]; then
-                    echo 'fail "Missing argument to -append"'
-                    exit 1
-                fi
-                arg_num=$((arg_num + 1))
-                suffix=$1
-                shift
-            elif [ -z "$op" ]; then
+                [ $got_switch = 'y' ] && continue
+            fi
+            if [ -z "$op" ]; then
                 if ! parse_operator "$arg"; then
                     printf "fail \"Invalid operator '%%arg{%s}'\"" "$arg_num"
                     exit 1
