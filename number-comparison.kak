@@ -1,9 +1,16 @@
 declare-option -hidden str number_comparison_install_path %sh{dirname "$kak_source"}
 
 define-command number-comparison -params .. -docstring "
-number-comparison [-register REG] [-no-bounds-check] [-no-negative] [-no-decimal] OPERATOR NUMBER
+number-comparison [<switches>] <operator> <number>
+Switches:
+    -no-bounds-check: The surrounding with lookarounds is disabled
+    -no-negative: The matching of negative numbers is disabled
+    -no-decimal: The matching of decimal numbers is disabled
+    -register <reg>: The register <ret> (instead of /) will be used to store the result
+    -prepend <pre>: The resulting regex is prefixed with <pre>
+    -append <post>: The resulting regex is suffixed with <post>
 " -shell-script-candidates %{
-    printf '%s\n' -register -no-bounds-check -no-negative -no-decimal
+    printf '%s\n' -register -no-bounds-check -no-negative -no-decimal -prepend -append
 } %{
     eval %sh{
         NOAUTOCOMPARE=''
@@ -14,6 +21,8 @@ number-comparison [-register REG] [-no-bounds-check] [-no-negative] [-no-decimal
         op=''
         number=''
         boundaries='y'
+        prefix=''
+        suffix=''
         while [ $# -ne 0 ]; do
             arg_num=$((arg_num + 1))
             arg=$1
@@ -33,6 +42,22 @@ number-comparison [-register REG] [-no-bounds-check] [-no-negative] [-no-decimal
                 with_negative='n'
             elif [ "$arg" = '-no-decimal' ]; then
                 with_decimal='n'
+            elif [ "$arg" = '-prepend' ]; then
+                if [ $# -eq 0 ]; then
+                    echo 'fail "Missing argument to -prepend"'
+                    exit 1
+                fi
+                arg_num=$((arg_num + 1))
+                prefix=$1
+                shift
+            elif [ "$arg" = '-append' ]; then
+                if [ $# -eq 0 ]; then
+                    echo 'fail "Missing argument to -append"'
+                    exit 1
+                fi
+                arg_num=$((arg_num + 1))
+                suffix=$1
+                shift
             elif [ -z "$op" ]; then
                 if ! parse_operator "$arg"; then
                     printf "fail \"Invalid operator '%%arg{%s}'\"" "$arg_num"
@@ -62,6 +87,7 @@ number-comparison [-register REG] [-no-bounds-check] [-no-negative] [-no-decimal
         fi
         # the generated regex shouldn't contain any ' ... I think
         printf "set-register %s '" "$register"
+        printf '%s' "$prefix"
         if [ "$boundaries" = y ]; then
             printf '(?<![0-9'
             [ "$with_negative" = 'y' ] && printf '-'
@@ -74,6 +100,7 @@ number-comparison [-register REG] [-no-bounds-check] [-no-negative] [-no-decimal
             [ "$with_decimal" = 'y' ] && printf '.'
             printf '])'
         fi
+        printf '%s' "$suffix"
         printf "'\n"
         printf "echo -markup \"{Information}{\}register '%s' set to '%%reg{%s}'\"\n" "$register" "$register"
     }

@@ -11,20 +11,26 @@ The two files must be in the same directory for the plugin to function.
 
 The plugin adds a single command:
 ```
-number-comparison [-register REG] [-no-bounds-check] [-no-negative] [-no-decimal] OPERATOR NUMBER
+number-comparison [<switches>] <operator> <number>
 ```
-`OPERATOR` and `NUMBER` are mandatory. `OPERATOR` must be one of  `<`,`<=`,`>=`,`=`,`!=`. `NUMBER` is the number to be compared to, it must conform to the format described below.
+`<operator>` and `<number>` are mandatory.  
+`<operator>` must be one of  `<`,`<=`,`>=`,`=`,`!=`.  
+`<number>` is the number to be compared to, it must conform to the format described below.  
 
-The command sets the `/` (search) register to a regular expression that will match any integer such that `MATCH OPERATOR NUMBER` is fulfilled. For example, after calling `number-comparison < 3`, numbers smaller than `3` (such as `2.99`, `1`, `0`, `-011`)  will be matched.
+The command sets the `/` (search) register to a regular expression that will match any integer such that `<match> <operator> <number>` is fulfilled. For example, after calling `number-comparison < 3`, numbers smaller than `3` (such as `2.99`, `1`, `0`, `-011`)  will be matched.
 
 The regex will be surrounded by the lookarounds `(?<![0-9-.])` and `(?![0-9.])`, to avoid partial number matches.
 
-### Options
+### Switches
 
-The surrounding with lookarounds can be disabled with the `-no-bounds-check` flag.  
-The matching of negative numbers can be disabled with the `-no-negative` flag.  
-The matching of decimal numbers can be disabled with the `-no-decimal` flag.  
-A register other than `/` may be specified with `-register`.  
+The following switches are supported:
+
+*`-no-bounds-check`: The surrounding with lookarounds is disabled.  
+*`-no-negative`: The matching of negative numbers is disabled.  
+*`-no-decimal`: The matching of decimal numbers is disabled.  
+*`-register <reg>`: The register `<reg>` (instead of `/`) will be used to store the result.  
+*`-prepend <pre>`: The resulting regex is prefixed with `<pre>`.  
+*`-append <post>`: The resulting regex is suffixed with `<post>`.  
 
 ### Number format
 
@@ -46,7 +52,7 @@ Some examples include:
 ### Standalone usage
 
 The regex generation is entirely contained in `number-comparison-regex.sh` and can be used standalone.
-The usage is similar to the kakoune command: `./number-comparison-regex.sh OPERATOR NUMBER`.
+The usage is similar to the kakoune command: `./number-comparison-regex.sh <operator> <number>`.
 The generated regex is printed to stdout should hopefully work in most engines.
 
 Be careful that operators such as `<` and `>` are special shell syntax, as such they should be wrapped in quotes.
