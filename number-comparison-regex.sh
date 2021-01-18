@@ -247,9 +247,9 @@ lt()
     had_int='n'
 
     # number with a smaller integral part (must be >0)
-    if [ "$int" -gt 0 ]; then
+    if [ "$int" != 0 ]; then
         had_int='y'
-        if [ "$int" -gt 1 ]; then
+        if [ "$int" != 1 ]; then
             if [ "${#int}" -eq 1 ]; then
                 print_range 0 "$((int - 1))"
             else
