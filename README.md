@@ -14,7 +14,7 @@ The plugin adds a single command:
 number-comparison [<switches>] <operator> <number>
 ```
 `<operator>` and `<number>` are mandatory.  
-`<operator>` must be one of  `<`,`<=`,`>=`,`=`,`!=`.  
+`<operator>` must be one of  `<`,`<=`, `>`, `>=`,`=`,`!=`.  
 `<number>` is the number to be compared to, it must conform to the format described below.  
 
 The command sets the `/` (search) register to a regular expression that will match any integer such that `<match> <operator> <number>` is fulfilled. For example, after calling `number-comparison < 3`, numbers smaller than `3` (such as `2.99`, `1`, `0`, `-011`)  will be matched.
@@ -25,12 +25,12 @@ The regex will be surrounded by the lookarounds `(?<![0-9-.])` and `(?![0-9.])`,
 
 The following switches are supported:
 
-*`-no-bounds-check`: The surrounding with lookarounds is disabled.  
-*`-no-negative`: The matching of negative numbers is disabled.  
-*`-no-decimal`: The matching of decimal numbers is disabled.  
-*`-register <reg>`: The register `<reg>` (instead of `/`) will be used to store the result.  
-*`-prepend <pre>`: The resulting regex is prefixed with `<pre>`.  
-*`-append <post>`: The resulting regex is suffixed with `<post>`.  
+* `-no-bounds-check`: The surrounding with lookarounds is disabled.  
+* `-no-negative`: The matching of negative numbers is disabled.  
+* `-no-decimal`: The matching of decimal numbers is disabled.  
+* `-register <reg>`: The register `<reg>` (instead of `/`) will be used to store the result.  
+* `-prepend <pre>`: The resulting regex is prefixed with `<pre>`.  
+* `-append <post>`: The resulting regex is suffixed with `<post>`.  
 
 ### Number format
 
