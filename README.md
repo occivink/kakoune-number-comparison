@@ -52,7 +52,8 @@ Some examples include:
 ### Standalone usage
 
 The regex generation is entirely contained in `number-comparison-regex.sh` and can be used standalone.
-The usage is similar to the kakoune command: `./number-comparison-regex.sh <operator> <number>`.
+The usage is similar to the kakoune command: `./number-comparison-regex.sh [<switches>] <operator> <number>`.
+Only the switches `-no-negative` and `-no-decimal` are supported in this mode.
 The generated regex is printed to stdout should hopefully work in most engines.
 
 Be careful that operators such as `<` and `>` are special shell syntax, as such they should be wrapped in quotes.

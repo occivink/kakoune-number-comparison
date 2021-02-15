@@ -480,21 +480,40 @@ compare()
 if [ -n "${NOAUTOCOMPARE+a}" ]; then
     :
 else
-    if [ $# -ne 2 ]; then
+    if [ $# -lt 2 ]; then
         echo Missing arguments
         exit 1
     fi
-    if ! parse_operator "$1"; then
-        echo "$1" is not a valid operator
+    for arg; do
+        if [ "$arg" = '-no-negative' ]; then
+            with_negative='n'
+        elif [ "$arg" = '-no-decimal' ]; then
+            with_decimal='n'
+        elif [ -z "$op" ]; then
+            if ! parse_operator "$arg"; then
+                echo "$arg" is not a valid operator
+                exit 1
+            fi
+        elif [ -z "$num" ]; then
+            if ! parse_number "$arg"; then
+                echo "$arg" is not a valid number
+                exit 1
+            fi
+        else
+            echo Unrecognized argument "$arg"
+            exit 1
+        fi
+    done
+    if [ -z "$op" ]; then
+        echo Missing operator
         exit 1
-    fi
-    if ! parse_number "$2"; then
-        echo "$2" is not a valid number
+    elif [ -z "$num" ]; then
+        echo Missing number
         exit 1
     fi
     if ! can_compare ; then
         echo Invalid comparison: "\"$1 $2\""
-        exit 1 
+        exit 1
     fi
     compare
     if [ $? != 0 ]; then
