@@ -13,18 +13,24 @@ with_decimal='y'
 
 parse_operator()
 {
-    case "$1" in
+    op_maybe="$1"
+    case "$op_maybe" in
       "<") ;;
       "<=") ;;
       ">") ;;
       ">=") ;;
       "=") ;;
-      "==") ;;
       "!=") ;;
+      "==") op_maybe='=' ;;
+      "le") op_maybe='<=' ;;
+      "lt") op_maybe='<' ;;
+      "ge") op_maybe='>=' ;;
+      "gt") op_maybe='>' ;;
+      "eq") op_maybe='=' ;;
+      "ne") op_maybe='!=' ;;
       *) return 1 ;;
     esac
-    op="$1"
-    [ "$op" = '==' ] && op='='
+    op="$op_maybe"
     return 0
 }
 
@@ -500,7 +506,7 @@ else
                 exit 1
             fi
         else
-            echo Unrecognized argument "$arg"
+            echo Unrecognized argument: "$arg"
             exit 1
         fi
     done
@@ -512,7 +518,7 @@ else
         exit 1
     fi
     if ! can_compare ; then
-        echo Invalid comparison: "\"$1 $2\""
+        echo Invalid comparison: "$op $num"
         exit 1
     fi
     compare
