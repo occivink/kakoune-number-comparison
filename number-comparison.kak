@@ -74,13 +74,11 @@ Switches:
                     printf "fail \"Invalid operator '%%arg{%s}'\"" "$arg_num"
                     exit 1
                 fi
-                op=$arg
-            elif [ -z "$number" ]; then
+            elif [ -z "$num" ]; then
                 if ! parse_number "$arg"; then
                     printf "fail \"Invalid number '%%arg{%s}'\"" "$arg_num"
                     exit 1
                 fi
-                number="$arg"
             else
                 printf "fail \"Unrecognized extra parameter '%%arg{%s}'\"" "$arg_num"
                 exit 1
@@ -89,7 +87,7 @@ Switches:
         if [ -z "$op" ]; then
             echo 'fail "Missing operator"'
             exit 1
-        elif [ -z "$number" ]; then
+        elif [ -z "$num" ]; then
             echo 'fail "Missing number"'
             exit 1
         fi
