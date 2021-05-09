@@ -1,7 +1,7 @@
 declare-option -hidden str number_comparison_install_path %sh{dirname "$kak_source"}
 
 define-command number-comparison -params .. -docstring "
-number-comparison [<switches>] <operator> <number>
+number-comparison [<switches>] <operator> <number>: Generates a regular expression that matches a number range
 Switches:
     -no-bounds-check: The surrounding with lookarounds is disabled
     -no-negative: The matching of negative numbers is disabled
