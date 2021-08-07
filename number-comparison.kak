@@ -1,4 +1,4 @@
-declare-option -hidden str number_comparison_install_path %sh{dirname "$kak_source"}
+declare-option -hidden str number_comparison_helper_script %sh{ printf '%s/%s' "${kak_source%/*}" "number-comparison-regex.sh" }
 
 define-command number-comparison -params .. -docstring "
 number-comparison [<switches>] <operator> <number>: Generates a regular expression that matches a number range
@@ -14,7 +14,7 @@ Switches:
 } %{
     eval %sh{
         NOAUTOCOMPARE=''
-        . "$kak_opt_number_comparison_install_path"/number-comparison-regex.sh
+        . "$kak_opt_number_comparison_helper_script"
 
         arg_num=0
         register='/'
