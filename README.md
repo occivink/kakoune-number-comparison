@@ -28,6 +28,7 @@ The following switches are supported:
 * `-no-bounds-check`: The surrounding with lookarounds is disabled.  
 * `-no-negative`: The matching of negative numbers is disabled.  
 * `-no-decimal`: The matching of decimal numbers is disabled.  
+* `-base <base>`: The input number is interpreted in base `<base>`, and the resulting regex will match numbers in the same base.  
 * `-register <reg>`: The register `<reg>` (instead of `/`) will be used to store the result.  
 * `-prepend <pre>`: The resulting regex is prefixed with `<pre>`.  
 * `-append <post>`: The resulting regex is suffixed with `<post>`.  
@@ -53,7 +54,7 @@ Some examples include:
 
 The regex generation is entirely contained in `number-comparison-regex.sh` and can be used standalone.
 The usage is similar to the kakoune command: `./number-comparison-regex.sh [<switches>] <operator> <number>`.
-Only the switches `-no-negative` and `-no-decimal` are supported in this mode.
+Only the switches `--no-negative`, `--no-decimal` and `--base` are supported in this mode.
 The generated regex is printed to stdout should hopefully work in most engines.
 
 Be careful that operators such as `<` and `>` are special shell syntax, as such they should be wrapped in quotes.
