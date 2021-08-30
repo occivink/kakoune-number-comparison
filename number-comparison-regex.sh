@@ -40,6 +40,7 @@ parse_base()
         14) max_digit=d                  ; any_digit='[\dA-Da-d]'       ; any_nonzero_digit='[1-9A-Da-d]'       ;;
         15) max_digit=e                  ; any_digit='[\dA-Ea-e]'       ; any_nonzero_digit='[1-9A-Ea-e]'       ;;
         16) max_digit=f                  ; any_digit='[\dA-Fa-f]'       ; any_nonzero_digit='[1-9A-Fa-f]'       ;;
+        *) exit 2 ;;
     esac
     return 0
 }
@@ -175,6 +176,7 @@ parse_number()
 
     # debug code
     # printf '%s%s.%s\n' $sign $int $dec
+    return 0
 }
 
 can_compare()
@@ -224,6 +226,7 @@ print_digit_range()
         case "$1" in
             [0-9]) printf '%s' "$1" ;;
             [a-f]) printf '[%s%s]' "$caps1" "$1" ;;
+            *) exit 2 ;;
         esac
     else
         case "$1$2" in
@@ -236,6 +239,7 @@ print_digit_range()
             [1-8][b-f]) printf '[%s-9A-%sa-%s]' "$1" "$caps2" "$2" ;;
             9[b-f])     printf '[9A-%sa-%s]' "$caps2" "$2" ;;
             [a-f][a-f]) printf '[%s-%s%s-%s]' "$caps1" "$caps2" "$1" "$2" ;;
+            *) exit 2 ;;
         esac
     fi
 }
@@ -251,7 +255,7 @@ print_bigger_digit()
         c) print_digit_range "d" "$max_digit" ;;
         d) print_digit_range "e" "$max_digit" ;;
         e) print_digit_range "f" "$max_digit" ;;
-        *) echo bro ; exit 1 ;;
+        *) exit 2 ;;
     esac
 }
 
@@ -265,7 +269,7 @@ print_smaller_digit()
         d) print_digit_range "0" "c" ;;
         e) print_digit_range "0" "d" ;;
         f) print_digit_range "0" "e" ;;
-        *) echo bra ; exit 1 ;;
+        *) exit 2 ;;
     esac
 }
 
@@ -279,7 +283,7 @@ print_smaller_digit_nonzero()
         d) print_digit_range "1" "c" ;;
         e) print_digit_range "1" "d" ;;
         f) print_digit_range "1" "e" ;;
-        *) exit 1 ;;
+        *) exit 2 ;;
     esac
 }
 
@@ -304,7 +308,7 @@ print_number()
                 d) printf -- '[Dd]' ;;
                 e) printf -- '[Ee]' ;;
                 f) printf -- '[Ff]' ;;
-                *) exit 1;;
+                *) exit 2;;
             esac
             print_number_tmp="$print_number_rest"
         done
@@ -440,7 +444,7 @@ gt()
 lt()
 {
     if [ "$is_zero" = 'y' ]; then
-        exit 1
+        exit 2
     fi
 
     printf '0*('
@@ -765,7 +769,7 @@ else
     compare
     if [ $? != 0 ]; then
         echo "Internal error"
-        return 1
+        exit 2
     else
         printf '\n'
     fi
