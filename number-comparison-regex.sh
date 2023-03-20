@@ -504,17 +504,16 @@ lt()
     fi
 
     if [ "$with_decimal" = 'y' ] && [ "$dec" != "" ]; then
-        [ "$had_int" = y ] && printf '|'
-
         # then, numbers that have the same integral part, but a smaller decimal part
-        if [ "$int" = 0 ]; then
-            # in the case of 0.xxx, the integral part is optional
-            printf '0|'
-        else
+        if [ "$had_int" = 'y' ]; then
+            printf '|'
             print_number "$int"
+            # the decimal part is of course optional, since no decimal part => smaller
+            printf '((\.0*)?|\.('
+        else
+            # in the case of 0.xxx, the integral part is optional
+            printf '(0|\.0*|\.('
         fi
-        # the decimal part is of course optional, since no decimal part => smaller
-        printf '((\.0*)?|\.('
 
         digitsbefore=''
         digitsafter=''
