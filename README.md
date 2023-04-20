@@ -61,7 +61,7 @@ Be careful that operators such as `<` and `>` are special shell syntax, as such 
 
 ## Testing
 
-The plugin comes with testing, implemented in the separate `test.kak`. It can be ran by simply doing `kak -n -e 'source test.kak ; start-test 10'`.  
+The plugin comes with testing, implemented in the separate `test.kak_`. It can be ran by simply doing `kak -n -e 'source test.kak_ ; start-test 10'`.  
 `10` can be replaced by any positive integer. The higher the number, the more thorough the tests, but also the longer they will take.
 
 If the tests succeed, kakoune will exit after running the tests.  
